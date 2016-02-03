@@ -1,67 +1,109 @@
-import com.mongodb.MongoClient;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.*;
+import com.mongodb.client.*;
 import org.bson.Document;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
-
-import org.bson.Document;
-import com.mongodb.Block;
-import com.mongodb.client.FindIterable;
-
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Sorts.ascending;
-import static java.util.Arrays.asList;
-
-import static java.util.Arrays.asList;
+import java.util.ArrayList;
 
 public class Solution {
     MongoDatabase db;
+    MongoClient mongo;
+    MongoCollection<Document> collection;
 
-    void run() throws ParseException {
-        MongoClient mongoClient = new MongoClient();
-        db = mongoClient.getDatabase("test");
-        makeDB();
-
-
-        FindIterable<Document> iterable = db.getCollection("restaurants").find();
-
-
-        System.out.println(iterable.first());
-
-
-
-
+    public Solution() {
+        this.mongo = new MongoClient();
+        this.db = mongo.getDatabase("zips");
+        collection = db.getCollection("zips");
     }
 
-    void makeDB() throws ParseException {
-        DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH);
-        db.getCollection("restaurants").insertOne(
-                new Document("address",
-                        new Document()
-                                .append("street", "2 Avenue")
-                                .append("zipcode", "10075")
-                                .append("building", "1480")
-                                .append("coord", asList(-73.9557413, 40.7720266)))
-                        .append("borough", "Manhattan")
-                        .append("cuisine", "Italian")
-                        .append("grades", asList(
-                                new Document()
-                                        .append("date", format.parse("2014-10-01T00:00:00Z"))
-                                        .append("grade", "A")
-                                        .append("score", 11),
-                                new Document()
-                                        .append("date", format.parse("2014-01-16T00:00:00Z"))
-                                        .append("grade", "B")
-                                        .append("score", 17)))
-                        .append("name", "Vella")
-                        .append("restaurant_id", "41704620"));
-
+    public Document EmptyDocument() {
+        Document empty = new Document();
+        empty.append(null, null);
+        return empty;
     }
 
-    public static void main(String[] args) throws ParseException {
-        new Solution().run();
+    public void createCity(String zip) {
+        Document city = new Document();
+        city.append("_id", zip);
+
+        if (collection.find(city).first() == null) {
+            collection.insertOne(city);
+        } else {
+            System.err.println("city already");
+        }
+    }
+
+    public void createCity(String zip, String name) {
+        Document city = new Document();
+        city.append("_id", zip);
+
+        if (collection.find(city).first() == null) {
+            city.append("name", name);
+            collection.insertOne(city);
+        } else {
+            System.err.println("city already");
+        }
+    }
+
+    public void createCity(String zip, String name, String state) {
+        Document country = new Document();
+        country.append("_id", zip);
+
+        if (collection.find(country).first() == null) {
+            country.append("name", name).append("state", state);
+            collection.insertOne(country);
+        } else {
+            System.err.println("country already");
+        }
+    }
+
+    public void TestMethod1(String zip) {
+        Document city = new Document();
+        city.append("_id", zip);
+
+
+        if (collection.find(city).first() == null) {
+            System.out.println("IN TESTM: NULL");
+        } else {
+            System.out.println("IN TESTM: NOT NULL");
+        }
+    }
+
+    public void deleteCity(String zip) {
+        Document city = new Document();
+        city.append("_id", zip);
+        Document tmp = collection.find(city).first();
+
+//        if (tmp != null) {
+//            System.out.println("!!!!!IN DELETE!!!!    " + tmp.get("_id"));
+//        } else {
+//            System.out.println("IN DELETE: NULL");
+//        }
+
+        collection.findOneAndDelete(city);
+
+        tmp = collection.find(city).first();
+    }
+
+    public Document findByName(String name) {
+        Document docForSearch = new Document();
+        docForSearch.append("name", name);
+        return collection.find(docForSearch).first();
+    }
+
+    public Document findByZip(String zip) {
+        Document docForSearch = new Document();
+        docForSearch.append("_id", zip);
+        return collection.find(docForSearch).first();
+    }
+
+    public ArrayList<Document> FItoArr(FindIterable<Document> fi) {
+        ArrayList<Document> ans = new ArrayList<Document>();
+        for (Document document : fi) {
+            ans.add(document);
+        }
+
+        return ans;
     }
 }
+
+
