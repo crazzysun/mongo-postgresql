@@ -22,13 +22,14 @@ public class Solution {
     }
 
     public void createCity(String zip) {
+
         Document city = new Document();
         city.append("_id", zip);
 
         if (collection.find(city).first() == null) {
             collection.insertOne(city);
         } else {
-            System.err.println("city already");
+            System.err.println("city already in db");
         }
     }
 
@@ -40,7 +41,7 @@ public class Solution {
             city.append("name", name);
             collection.insertOne(city);
         } else {
-            System.err.println("city already");
+            System.err.println("city already in db");
         }
     }
 
@@ -52,7 +53,7 @@ public class Solution {
             country.append("name", name).append("state", state);
             collection.insertOne(country);
         } else {
-            System.err.println("country already");
+            System.err.println("city already in db");
         }
     }
 
