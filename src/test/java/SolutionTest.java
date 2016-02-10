@@ -1,7 +1,6 @@
 import junit.framework.*;
 import org.bson.Document;
 
-
 public class SolutionTest extends TestCase {
     Solution cur;
 
@@ -25,7 +24,6 @@ public class SolutionTest extends TestCase {
         cur.deleteCity("123");
     }
 
-
     public void testDeleteCity() {
         cur.createCity("1234567", "qwe");
         Document ans = cur.findByZip("1234567");
@@ -46,7 +44,6 @@ public class SolutionTest extends TestCase {
         assertEquals(cur.collection.count(), curCnt);
         cur.deleteCity("1234");
     }
-
 
     public void testUpdateOne() {
         Document doc = new Document("state", "CA");
