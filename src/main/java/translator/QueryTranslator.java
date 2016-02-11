@@ -2,13 +2,10 @@ package translator;
 
 import org.bson.Document;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class QueryTranslator {
     private Map<String, String> querySelectorsMNG;
-    private queryResult qr;
 
     public QueryTranslator() {
         querySelectorsMNG = new HashMap<String, String>();
@@ -21,51 +18,43 @@ public class QueryTranslator {
         }
     }
 
-    //Find for unitTetsts
-    public String find(String tableName, String inputQuery, String inputProjection) {
+    //Find for unitTests
+    public QueryResult find(String tableName, String inputQuery, String inputProjection) {
         Document queryDoc = Document.parse(inputQuery);
         Document projectionDoc = !inputProjection.equals("") ? Document.parse(inputProjection) : new Document();
-        qr = new queryResult();
-        String queryParse = queryFindToStringRec(queryDoc);
-        String projParse = projectionFindToString(projectionDoc);
-
-//        //<debug>
-//        for (int i = 0; i < qr.parametrs.size(); i++) {
-//            System.out.print(qr.parametrs.get(i) + ", ");
-//        }
-//        System.out.println();
-//        //</debug>
-
-        return "select " + projParse + " from " + tableName + " where " + queryParse + ";";
+        return find(tableName, queryDoc, projectionDoc);
     }
 
-    public queryResult find(String tableName, Document queryDoc, Document projectionDoc) {
-        String queryParse = queryFindToStringRec(queryDoc);
+    public QueryResult find(String tableName, Document queryDoc, Document projectionDoc) {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+        String queryParse = queryFindToStringRec(queryDoc, parameters);
         String projParse = projectionFindToString(projectionDoc);
-        qr = new queryResult();
-        qr.query = "select " + projParse + " from " + tableName + " where " + queryParse + ";";
-
-        return qr;
+        String query = "select " + projParse + " from " + tableName + " where " + queryParse + ";";
+        return new QueryResult(parameters, query);
     }
 
     private String projectionFindToString(Document queryDoc) {
         ArrayList<String> keys = new ArrayList<String>();
-
-        keys.add("_id");
+        //keys.add("_id");
+        boolean addId = true;
 
         for (String key : queryDoc.keySet()) {
             if (queryDoc.get(key).equals(0)) {
                 keys.remove(key);
+
+                if (key.equals("_id")) addId = false;
             } else {
-                keys.add(key);
+                if (!queryDoc.containsKey(key)) {
+                    keys.add(key);
+                }
             }
         }
 
-
-        if (keys.size() < 2) {
+        if (keys.isEmpty()) {
             return "*";
         }
 
+        if (addId) keys.add(0, "_id");
         StringBuilder retValue = new StringBuilder();
         retValue.append(keys.get(0).replaceAll("\\.", "->"));
         for (int i = 1; i < keys.size(); i++) {
@@ -75,12 +64,12 @@ public class QueryTranslator {
         return retValue.toString();
     }
 
-    private String queryFindToStringRec(Document doc) {
+    private String queryFindToStringRec(Document doc, ArrayList<Object> parameters) {
         String retValue = "";
 
         for (String key : doc.keySet()) {
             String curKey = "";
-            Object curValue = "";
+            String curValue = "";
             String curOp = "";
 
             if (!querySelectorsMNG.containsKey(key)) {
@@ -88,19 +77,19 @@ public class QueryTranslator {
                     curKey = key;
                 }
                 if (doc.get(key).getClass().equals(Document.class)) {
-                    curValue = queryFindToStringRec((Document) doc.get(key));
+                    curValue = queryFindToStringRec((Document) doc.get(key), parameters);
                 } else {
                     if (curOp.equals("")) curOp = "$eq";
-                    qr.parametrs.add(doc.get(key));
+                    parameters.add(doc.get(key));
                     curValue = "?";
                 }
             } else {
                 curOp = key;
 
                 if (doc.get(key).getClass().equals(Document.class)) {
-                    curValue = queryFindToStringRec((Document) doc.get(key));
+                    curValue = queryFindToStringRec((Document) doc.get(key), parameters);
                 } else {
-                    qr.parametrs.add(doc.get(key));
+                    parameters.add(doc.get(key));
                     curValue = "?";
                 }
             }
@@ -116,12 +105,21 @@ public class QueryTranslator {
         return retValue;
     }
 
-    class queryResult {
-        String query;
-        ArrayList<Object> parametrs;
+    public class QueryResult {
+        private String query;
+        private ArrayList<Object> parameters;
 
-        public queryResult() {
-            this.parametrs = new ArrayList<Object>();
+        public QueryResult(ArrayList<Object> parameters, String query) {
+            this.parameters = parameters;
+            this.query = query;
+        }
+
+        public String getQuery() {
+            return query;
+        }
+
+        public List<Object> getParameters() {
+            return Collections.unmodifiableList(parameters);
         }
     }
 }
