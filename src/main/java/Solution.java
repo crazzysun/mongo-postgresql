@@ -21,18 +21,6 @@ public class Solution {
         return empty;
     }
 
-    public void createCity(String zip) {
-
-        Document city = new Document();
-        city.append("_id", zip);
-
-        if (collection.find(city).first() == null) {
-            collection.insertOne(city);
-        } else {
-            System.err.println("city already in db");
-        }
-    }
-
     public void createCity(String zip, String name) {
         Document city = new Document();
         city.append("_id", zip);
@@ -40,18 +28,6 @@ public class Solution {
         if (collection.find(city).first() == null) {
             city.append("name", name);
             collection.insertOne(city);
-        } else {
-            System.err.println("city already in db");
-        }
-    }
-
-    public void createCity(String zip, String name, String state) {
-        Document country = new Document();
-        country.append("_id", zip);
-
-        if (collection.find(country).first() == null) {
-            country.append("name", name).append("state", state);
-            collection.insertOne(country);
         } else {
             System.err.println("city already in db");
         }
@@ -74,14 +50,7 @@ public class Solution {
         city.append("_id", zip);
         Document tmp = collection.find(city).first();
 
-//        if (tmp != null) {
-//            System.out.println("!!!!!IN DELETE!!!!    " + tmp.get("_id"));
-//        } else {
-//            System.out.println("IN DELETE: NULL");
-//        }
-
         collection.findOneAndDelete(city);
-
         tmp = collection.find(city).first();
     }
 
