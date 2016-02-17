@@ -6,8 +6,10 @@ import java.util.*;
 
 public class QueryTranslator {
     private Map<String, String> querySelectorsMNG;
+    private String name_json_data;
 
-    public QueryTranslator() {
+    public QueryTranslator(String name_jd) {
+        name_json_data = name_jd;
         querySelectorsMNG = new HashMap<>();
         String[] key = {"", "$eq", "$gt", "$gte", "$lt", "$lte", "$ne", "$in", "$nin", "$or", "$and", "$not", "$nor"};
         String[] value = {"", " = ", " > ", " >= ", " < ", " <= ", " != ", " IN ", " NOT IN ", " OR ", " AND ", " NOT ", " OR "};
@@ -50,33 +52,34 @@ public class QueryTranslator {
             return "*";
         }
         if (addId && !keys.contains("_id")) keys.add(0, "_id");
+
         StringBuilder retValue = new StringBuilder();
-        retValue.append(keys.get(0).replaceAll("\\.", "->"));
+        retValue.append(stringToJson(keys.get(0))).append(" as '").append(keys.get(0)).append("'");
         for (int i = 1; i < keys.size(); i++) {
-            retValue.append(", ").append(keys.get(i).replaceAll("\\.", "->"));
+            retValue.append(", ").append(stringToJson(keys.get(i))).append(" as '").append(keys.get(i)).append("'");
         }
 
         return retValue.toString();
     }
 
     private String queryFindToString(Document doc, ArrayList<Object> parameters) throws Exception {
-        String result = "";
+        StringBuilder result = new StringBuilder();
 
         for (String key : doc.keySet()) {
-            if (!result.equals("")) result += " AND ";
-            result += docToStringRec(key, doc.get(key), parameters);
+            if (result.length() != 0) result.append(" AND ");
+            result.append(docToStringRec(key, doc.get(key), parameters));
         }
 
-        return result;
+        return result.toString();
     }
 
     private String docToStringRec(String field, Object value, ArrayList<Object> parameters) throws Exception {
-        String result = "";
+        StringBuilder result = new StringBuilder();
 
         if (querySelectorsMNG.containsKey(field)) {  // and, or, nor
             if (value instanceof List) {
                 if (field.equals("$nor")) {
-                    result += " NOT ";
+                    result.append(" NOT ");
                 }
 
                 ArrayList arr = (ArrayList) value;
@@ -85,65 +88,79 @@ public class QueryTranslator {
 
                 Document firstDoc = (Document) arr.get(0);
                 String firstKey = getFirstKey(firstDoc);
-                result += "(" + docToStringRec(firstKey, firstDoc.get(firstKey), parameters);
+
+                result.append("(").append(docToStringRec(firstKey, firstDoc.get(firstKey), parameters));
                 for (int i = 1; i < arr.size(); i++) {
                     firstDoc = (Document) arr.get(i);
                     firstKey = getFirstKey(firstDoc);
-                    result += querySelectorsMNG.get(field) + docToStringRec(firstKey, firstDoc.get(firstKey), parameters);
+                    result.append(querySelectorsMNG.get(field)).append(docToStringRec(firstKey, firstDoc.get(firstKey), parameters));
                 }
-                result += ")";
+                result.append(")");
             } else {
                 throw new Exception("Bad value. Required: ArrayList. Found: " + value.getClass());
             }
         } else {
-            field = field.replaceAll("\\.", "->");
+            if (!field.startsWith(name_json_data)) field = stringToJson(field);
             if (value instanceof Document) {
                 Document doc = (Document) value;
                 String keyDoc = getFirstKey(doc);
+
                 if (keyDoc == null) throw new Exception("Bad value. Key must be not null.");
 
                 switch (keyDoc) {
                     case "$in":
                     case "$nin":
-                        result = field + querySelectorsMNG.get(keyDoc) + "(";
+                        result.append(field).append(querySelectorsMNG.get(keyDoc)).append("(");
 
                         if (!(doc.get(keyDoc) instanceof ArrayList))
                             throw new Exception("Bad types. Required: ArrayList. Found: " + doc.get(keyDoc).getClass());
 
                         ArrayList arrForIn = (ArrayList) doc.get(keyDoc);
-                        parameters.add(arrForIn.get(0));
-                        result += "?";
+                        parameters.add("'" + arrForIn.get(0) + "'");
+                        result.append("?");
                         for (int i = 1; i < arrForIn.size(); i++) {
-                            parameters.add(arrForIn.get(i));
-                            result += ", " + "?";
+                            parameters.add("'" + arrForIn.get(i) + "'");
+                            result.append(", ?");
                         }
-                        result += ")";
+                        result.append(")");
                         break;
                     case "$not":
-                        result = querySelectorsMNG.get(keyDoc);
+                        result = new StringBuilder(querySelectorsMNG.get(keyDoc));
                         if (!(doc.get(keyDoc) instanceof Document))
                             throw new Exception("Bad types. Required: Document. Found: " + doc.get(keyDoc).getClass());
-                        result += docToStringRec(field, doc.get(keyDoc), parameters);
+                        result.append(docToStringRec(field, doc.get(keyDoc), parameters));
                         break;
                     default:
                         for (String kd : doc.keySet()) {
-                            parameters.add(doc.get(kd));
-                            if (!result.equals("")) result += " and ";
-                            result += field + querySelectorsMNG.get(kd) + "?";
+                            parameters.add("'" + doc.get(kd) + "'");
+                            if (result.length() != 0) result.append(" and ");
+                            result.append(field).append(querySelectorsMNG.get(kd)).append("?");
                         }
                         break;
                 }
             } else {
-                parameters.add(value);
-                result += field + " = ?";
+                parameters.add("'" + value + "'");
+                result.append(field).append(" = ?");
             }
         }
-        return result;
+        return result.toString();
     }
 
     private static String getFirstKey(Document doc) {
         Iterator<String> i = doc.keySet().iterator();
         return i.hasNext() ? i.next() : null;
+    }
+
+    private String stringToJson(String str) {
+        String[] arr = str.trim().split("\\.");
+        StringBuilder result = new StringBuilder();
+        result.append(name_json_data);
+
+        for (String anArr : arr) {
+            result.append("->'").append(anArr).append("'");
+        }
+
+        return result.toString();
     }
 
     public class QueryResult {

@@ -6,12 +6,12 @@
 
 2. Import json to PostgreSQL
 
-	CREATE TABLE [table_name]([column_name] jsonb);
+	CREATE TABLE [table_name](json_data jsonb);
 	\copy [table_name] FROM '[json_file_name]'
 	VACUUM ANALYZE [table_name];
 
 3. Create column '_id', make it primary key
 
 	alter table [table_name] add column _id text;
-	update [table_name] set _id = [json_path_to_id]->'_id';
+	update [table_name] set _id = json_data->[json_path_to_id]->'_id';
 	alter table [table_name] add primary key (_id);

@@ -49,7 +49,6 @@ public class Solution {
         Document city = new Document();
         city.append("_id", zip);
         Document tmp = collection.find(city).first();
-
         collection.findOneAndDelete(city);
         tmp = collection.find(city).first();
     }
