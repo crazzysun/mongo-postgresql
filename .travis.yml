@@ -1,4 +1,6 @@
 language: java
+jdk:
+  - oraclejdk8
 services: mongodb
 before_script:
   - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
