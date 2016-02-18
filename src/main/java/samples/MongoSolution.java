@@ -1,29 +1,27 @@
+package samples;
+
 import com.mongodb.*;
 import com.mongodb.client.*;
 import org.bson.Document;
 
 import java.util.ArrayList;
 
-public class Solution {
+public class MongoSolution {
     MongoDatabase db;
-    MongoClient mongo;
-    MongoCollection<Document> collection;
+    public MongoClient mongo;
+    public MongoCollection<Document> collection;
 
-    public Solution() {
+    public MongoSolution() {
         this.mongo = new MongoClient();
         this.db = mongo.getDatabase("zips");
         collection = db.getCollection("zips");
     }
 
-    public Document EmptyDocument() {
-        Document empty = new Document();
-        empty.append(null, null);
-        return empty;
-    }
-
     public void createCity(String zip, String name) {
         Document city = new Document();
         city.append("_id", zip);
+
+        collection.find();
 
         if (collection.find(city).first() == null) {
             city.append("name", name);
@@ -33,24 +31,10 @@ public class Solution {
         }
     }
 
-    public void TestMethod1(String zip) {
-        Document city = new Document();
-        city.append("_id", zip);
-
-
-        if (collection.find(city).first() == null) {
-            System.out.println("IN TESTM: NULL");
-        } else {
-            System.out.println("IN TESTM: NOT NULL");
-        }
-    }
-
     public void deleteCity(String zip) {
         Document city = new Document();
         city.append("_id", zip);
-        Document tmp = collection.find(city).first();
         collection.findOneAndDelete(city);
-        tmp = collection.find(city).first();
     }
 
     public Document findByName(String name) {
@@ -62,6 +46,8 @@ public class Solution {
     public Document findByZip(String zip) {
         Document docForSearch = new Document();
         docForSearch.append("_id", zip);
+
+        collection.find(docForSearch).projection(new Document("loc", 1));
         return collection.find(docForSearch).first();
     }
 

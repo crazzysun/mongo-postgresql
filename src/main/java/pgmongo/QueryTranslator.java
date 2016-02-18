@@ -1,4 +1,4 @@
-package translator;
+package pgmongo;
 
 import org.bson.Document;
 
@@ -49,14 +49,14 @@ public class QueryTranslator {
         }
 
         if (keys.isEmpty()) {
-            return "*";
+            return name_json_data;
         }
         if (addId && !keys.contains("_id")) keys.add(0, "_id");
 
         StringBuilder retValue = new StringBuilder();
-        retValue.append(stringToJson(keys.get(0))).append(" as '").append(keys.get(0)).append("'");
+        retValue.append(stringToJson(keys.get(0))).append(" as \"").append(keys.get(0)).append("\"");
         for (int i = 1; i < keys.size(); i++) {
-            retValue.append(", ").append(stringToJson(keys.get(i))).append(" as '").append(keys.get(i)).append("'");
+            retValue.append(", ").append(stringToJson(keys.get(i))).append(" as \"").append(keys.get(i)).append("\"");
         }
 
         return retValue.toString();
@@ -116,11 +116,11 @@ public class QueryTranslator {
                             throw new Exception("Bad types. Required: ArrayList. Found: " + doc.get(keyDoc).getClass());
 
                         ArrayList arrForIn = (ArrayList) doc.get(keyDoc);
-                        parameters.add("'" + arrForIn.get(0) + "'");
-                        result.append("?");
+                        parameters.add(arrForIn.get(0));
+                        result.append("?::jsonb");
                         for (int i = 1; i < arrForIn.size(); i++) {
-                            parameters.add("'" + arrForIn.get(i) + "'");
-                            result.append(", ?");
+                            parameters.add(arrForIn.get(i));
+                            result.append(", ?::jsonb");
                         }
                         result.append(")");
                         break;
@@ -132,15 +132,15 @@ public class QueryTranslator {
                         break;
                     default:
                         for (String kd : doc.keySet()) {
-                            parameters.add("'" + doc.get(kd) + "'");
+                            parameters.add(doc.get(kd));
                             if (result.length() != 0) result.append(" and ");
-                            result.append(field).append(querySelectorsMNG.get(kd)).append("?");
+                            result.append(field).append(querySelectorsMNG.get(kd)).append("?::jsonb");
                         }
                         break;
                 }
             } else {
-                parameters.add("'" + value + "'");
-                result.append(field).append(" = ?");
+                parameters.add(value);
+                result.append(field).append(" = ?::jsonb");
             }
         }
         return result.toString();

@@ -1,11 +1,12 @@
 import junit.framework.*;
+import samples.MongoSolution;
 import org.bson.Document;
 
-public class SolutionTest extends TestCase {
-    Solution cur;
+public class MongoSolutionTest extends TestCase {
+    MongoSolution cur;
 
     protected void setUp() {
-        cur = new Solution();
+        cur = new MongoSolution();
         cur.deleteCity("1234");
     }
 
