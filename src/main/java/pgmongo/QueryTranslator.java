@@ -11,8 +11,8 @@ public class QueryTranslator {
     public QueryTranslator(String name_jd) {
         name_json_data = name_jd;
         querySelectorsMNG = new HashMap<>();
-        String[] key = {"", "$eq", "$gt", "$gte", "$lt", "$lte", "$ne", "$in", "$nin", "$or", "$and", "$not", "$nor"};
-        String[] value = {"", " = ", " > ", " >= ", " < ", " <= ", " != ", " IN ", " NOT IN ", " OR ", " AND ", " NOT ", " OR "};
+        String[] key = {"$eq", "$gt", "$gte", "$lt", "$lte", "$ne", "$in", "$nin", "$or", "$and", "$not", "$nor"};
+        String[] value = {" = ", " > ", " >= ", " < ", " <= ", " != ", " IN ", " NOT IN ", " OR ", " AND ", " NOT ", " OR "};
         for (int i = 0; i < value.length; i++) {
             querySelectorsMNG.put(key[i], value[i]);
         }
@@ -31,6 +31,17 @@ public class QueryTranslator {
         String projParse = projectionFindToString(projectionDoc);
         String query = "select " + projParse + " from " + tableName + " where " + queryParse + ";";
         return new QueryResult(parameters, query.replaceAll("  ", " "));
+    }
+
+    private String queryFindToString(Document doc, ArrayList<Object> parameters) throws Exception {
+        StringBuilder result = new StringBuilder();
+
+        for (String key : doc.keySet()) {
+            if (result.length() != 0) result.append(" AND ");
+            result.append(docToStringRec(key, doc.get(key), parameters));
+        }
+
+        return result.toString();
     }
 
     private String projectionFindToString(Document projDoc) {
@@ -60,17 +71,6 @@ public class QueryTranslator {
         }
 
         return retValue.toString();
-    }
-
-    private String queryFindToString(Document doc, ArrayList<Object> parameters) throws Exception {
-        StringBuilder result = new StringBuilder();
-
-        for (String key : doc.keySet()) {
-            if (result.length() != 0) result.append(" AND ");
-            result.append(docToStringRec(key, doc.get(key), parameters));
-        }
-
-        return result.toString();
     }
 
     private String docToStringRec(String field, Object value, ArrayList<Object> parameters) throws Exception {
@@ -116,10 +116,10 @@ public class QueryTranslator {
                             throw new Exception("Bad types. Required: ArrayList. Found: " + doc.get(keyDoc).getClass());
 
                         ArrayList arrForIn = (ArrayList) doc.get(keyDoc);
-                        parameters.add(arrForIn.get(0));
+                        parameters.add(arrForIn.get(0).toString());
                         result.append("?::jsonb");
                         for (int i = 1; i < arrForIn.size(); i++) {
-                            parameters.add(arrForIn.get(i));
+                            parameters.add(arrForIn.get(i).toString());
                             result.append(", ?::jsonb");
                         }
                         result.append(")");
@@ -132,19 +132,44 @@ public class QueryTranslator {
                         break;
                     default:
                         for (String kd : doc.keySet()) {
-                            parameters.add(doc.get(kd));
+                            parameters.add(doc.get(kd).toString());
                             if (result.length() != 0) result.append(" and ");
                             result.append(field).append(querySelectorsMNG.get(kd)).append("?::jsonb");
                         }
                         break;
                 }
             } else {
-                parameters.add(value);
+                parameters.add(value.toString());
                 result.append(field).append(" = ?::jsonb");
             }
         }
         return result.toString();
     }
+
+    public QueryResult delete(String tableName, String inputQuery) throws Exception {
+        Document queryDoc = Document.parse(inputQuery);
+        return delete(tableName, queryDoc);
+    }
+
+    public QueryResult delete(String tableName, Document inputQuery) throws Exception {
+        ArrayList<Object> parameters = new ArrayList<>();
+        StringBuilder result = new StringBuilder("delete from " + tableName);
+        StringBuilder tmpRes = new StringBuilder();
+
+        if (inputQuery.isEmpty()) {
+            result.append(";");
+        } else {
+            result.append(" where ");
+            for (String key : inputQuery.keySet()) {
+                if (tmpRes.length() != 0) tmpRes.append(" AND ");
+                tmpRes.append(docToStringRec(key, inputQuery.get(key), parameters));
+            }
+        }
+
+        result.append(tmpRes).append(";");
+        return new QueryResult(parameters, result.toString().replaceAll("  ", " "));
+    }
+
 
     private static String getFirstKey(Document doc) {
         Iterator<String> i = doc.keySet().iterator();
