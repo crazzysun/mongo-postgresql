@@ -99,5 +99,6 @@ public class QueryTranslatorTest extends TestCase {
         TestCase.assertEquals(qt.delete("test_json", "{'review.votes' : {$lte: 5}, 'product.group' : 'Book'}").getQuery(),
                 "delete from test_json where json_data->'review'->'votes' <= ?::jsonb AND json_data->'product'->'group' = ?::jsonb;");
         TestCase.assertEquals(qt.delete("zips", "{'city': 'BARRE'}").getQuery(), "delete from zips where json_data->'city' = ?::jsonb;");
+        TestCase.assertEquals(qt.delete("zips", "{'city': 'BARRE'}", 1).getQuery(), "delete from zips where json_data->'city' = ?::jsonb LIMIT 1;");
     }
 }

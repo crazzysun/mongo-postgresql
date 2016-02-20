@@ -146,12 +146,19 @@ public class QueryTranslator {
         return result.toString();
     }
 
+    //delete for tests
     public QueryResult delete(String tableName, String inputQuery) throws Exception {
-        Document queryDoc = Document.parse(inputQuery);
-        return delete(tableName, queryDoc);
+        return delete(tableName, inputQuery, 0);
     }
 
-    public QueryResult delete(String tableName, Document inputQuery) throws Exception {
+    //delete for tests
+    public QueryResult delete(String tableName, String inputQuery, int justOne) throws Exception {
+        Document queryDoc = Document.parse(inputQuery);
+        return delete(tableName, queryDoc, justOne);
+    }
+
+
+    public QueryResult delete(String tableName, Document inputQuery, int justOne) throws Exception {
         ArrayList<Object> parameters = new ArrayList<>();
         StringBuilder result = new StringBuilder("delete from " + tableName);
         StringBuilder tmpRes = new StringBuilder();
@@ -166,8 +173,9 @@ public class QueryTranslator {
             }
         }
 
-        result.append(tmpRes).append(";");
-        return new QueryResult(parameters, result.toString().replaceAll("  ", " "));
+        result.append(tmpRes);
+        if (justOne != 0) result.append(" LIMIT 1");
+        return new QueryResult(parameters, result.append(";").toString().replaceAll("  ", " "));
     }
 
 

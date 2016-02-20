@@ -9,6 +9,7 @@ import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
+import org.bson.codecs.BsonInt32Codec;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
@@ -103,13 +104,12 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
         return null;
     }
 
-    @Override
-    public FindIterable<TDocument> find(Bson bson) {
+    public FindIterable<TDocument> find(Bson query, Bson projection) {
         try {
             QueryTranslator qt = new QueryTranslator("json_data");
-            QueryTranslator.QueryResult result = qt.find(tableName, (Document) bson, new Document());
-            List<Object> param = result.getParameters();
+            QueryTranslator.QueryResult result = qt.find(tableName, (Document) query, (Document) projection);
             PreparedStatement ps = connection.prepareStatement(result.getQuery());
+            List<Object> param = result.getParameters();
 
             for (int i = 1; i <= param.size(); i++) {
                 ps.setString(i, param.get(i - 1).toString());
@@ -157,6 +157,11 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public FindIterable<TDocument> find(Bson bson) {
+        return find(bson, new Document());
     }
 
     @Override
@@ -216,7 +221,32 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
 
     @Override
     public DeleteResult deleteMany(Bson bson) {
-        return null;
+        QueryTranslator qt = new QueryTranslator("json_data");
+        try {
+            QueryTranslator.QueryResult result = qt.delete(tableName, (Document) bson, 0);
+            PreparedStatement ps = connection.prepareStatement(result.getQuery());
+            List<Object> param = result.getParameters();
+
+            for (int i = 1; i <= param.size(); i++) {
+                ps.setString(i, "\"" + param.get(i - 1).toString() + "\"");
+            }
+
+            int res = ps.executeUpdate();
+
+            return new DeleteResult() {
+                @Override
+                public boolean wasAcknowledged() {
+                    return false;
+                }
+
+                @Override
+                public long getDeletedCount() {
+                    return res;
+                }
+            };
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
