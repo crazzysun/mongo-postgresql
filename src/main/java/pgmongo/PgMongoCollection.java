@@ -9,7 +9,6 @@ import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
-import org.bson.codecs.BsonInt32Codec;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
@@ -20,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class PgMongoCollection<TDocument extends Document> implements MongoCollection<TDocument> {
+public class PgMongoCollection implements MongoCollection<Document> {
     private java.sql.Connection connection;
     String tableName;
 
@@ -35,7 +34,7 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public Class<TDocument> getDocumentClass() {
+    public Class<Document> getDocumentClass() {
         return null;
     }
 
@@ -55,22 +54,22 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public <NewTDocument> MongoCollection<NewTDocument> withDocumentClass(Class<NewTDocument> aClass) {
+    public <NewDocument> MongoCollection<NewDocument> withDocumentClass(Class<NewDocument> aClass) {
         return null;
     }
 
     @Override
-    public MongoCollection<TDocument> withCodecRegistry(CodecRegistry codecRegistry) {
+    public MongoCollection<Document> withCodecRegistry(CodecRegistry codecRegistry) {
         return null;
     }
 
     @Override
-    public MongoCollection<TDocument> withReadPreference(ReadPreference readPreference) {
+    public MongoCollection<Document> withReadPreference(ReadPreference readPreference) {
         return null;
     }
 
     @Override
-    public MongoCollection<TDocument> withWriteConcern(WriteConcern writeConcern) {
+    public MongoCollection<Document> withWriteConcern(WriteConcern writeConcern) {
         return null;
     }
 
@@ -95,7 +94,7 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public FindIterable<TDocument> find() {
+    public FindIterable<Document> find() {
         return null;
     }
 
@@ -104,7 +103,7 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
         return null;
     }
 
-    public FindIterable<TDocument> find(Bson query, Bson projection) {
+    public FindIterable<Document> find(Bson query, Bson projection) {
         try {
             QueryTranslator qt = new QueryTranslator("json_data");
             QueryTranslator.QueryResult result = qt.find(tableName, (Document) query, (Document) projection);
@@ -129,26 +128,26 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
             }
 
             Iterator it = arr.iterator();
-            return new FindIterableStub<TDocument>() {
+            return new FindIterableStub<Document>() {
                 @Override
-                public MongoCursor<TDocument> iterator() {
-                    return new MongoCursorStub<TDocument>() {
+                public MongoCursor<Document> iterator() {
+                    return new MongoCursorStub<Document>() {
                         @Override
                         public boolean hasNext() {
                             return it.hasNext();
                         }
 
                         @Override
-                        public TDocument next() {
-                            return (TDocument) it.next();
+                        public Document next() {
+                            return (Document) it.next();
                         }
                     };
                 }
 
                 @Override
-                public TDocument first() {
+                public Document first() {
                     if (it.hasNext()) {
-                        return (TDocument) it.next();
+                        return (Document) it.next();
                     } else {
                         throw new ArrayIndexOutOfBoundsException();
                     }
@@ -160,7 +159,7 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public FindIterable<TDocument> find(Bson bson) {
+    public FindIterable<Document> find(Bson bson) {
         return find(bson, new Document());
     }
 
@@ -170,7 +169,7 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public AggregateIterable<TDocument> aggregate(List<? extends Bson> list) {
+    public AggregateIterable<Document> aggregate(List<? extends Bson> list) {
         return null;
     }
 
@@ -180,7 +179,7 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public MapReduceIterable<TDocument> mapReduce(String s, String s1) {
+    public MapReduceIterable<Document> mapReduce(String s, String s1) {
         return null;
     }
 
@@ -190,27 +189,42 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public BulkWriteResult bulkWrite(List<? extends WriteModel<? extends TDocument>> list) {
+    public BulkWriteResult bulkWrite(List<? extends WriteModel<? extends Document>> list) {
         return null;
     }
 
     @Override
-    public BulkWriteResult bulkWrite(List<? extends WriteModel<? extends TDocument>> list, BulkWriteOptions bulkWriteOptions) {
+    public BulkWriteResult bulkWrite(List<? extends WriteModel<? extends Document>> list, BulkWriteOptions bulkWriteOptions) {
         return null;
     }
 
     @Override
-    public void insertOne(TDocument tDocument) {
-
+    public void insertOne(Document Document) {
+        ArrayList<Document> tmpArr = new ArrayList<>();
+        tmpArr.add(Document);
+        insertMany(tmpArr);
     }
 
     @Override
-    public void insertMany(List<? extends TDocument> list) {
+    public void insertMany(List<? extends Document> list) {
+        QueryTranslator qt = new QueryTranslator("json_data");
+        try {
+            QueryTranslator.QueryResult result = qt.insert(tableName, (List<Document>) list);
+            PreparedStatement ps = connection.prepareStatement(result.getQuery());
+            List<Object> param = result.getParameters();
 
+            for (int i = 1; i <= param.size(); i++) {
+                ps.setString(i, param.get(i - 1).toString());
+            }
+
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public void insertMany(List<? extends TDocument> list, InsertManyOptions insertManyOptions) {
+    public void insertMany(List<? extends Document> list, InsertManyOptions insertManyOptions) {
 
     }
 
@@ -250,12 +264,12 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public UpdateResult replaceOne(Bson bson, TDocument tDocument) {
+    public UpdateResult replaceOne(Bson bson, Document Document) {
         return null;
     }
 
     @Override
-    public UpdateResult replaceOne(Bson bson, TDocument tDocument, UpdateOptions updateOptions) {
+    public UpdateResult replaceOne(Bson bson, Document Document, UpdateOptions updateOptions) {
         return null;
     }
 
@@ -280,32 +294,32 @@ public class PgMongoCollection<TDocument extends Document> implements MongoColle
     }
 
     @Override
-    public TDocument findOneAndDelete(Bson bson) {
+    public Document findOneAndDelete(Bson bson) {
         return null;
     }
 
     @Override
-    public TDocument findOneAndDelete(Bson bson, FindOneAndDeleteOptions findOneAndDeleteOptions) {
+    public Document findOneAndDelete(Bson bson, FindOneAndDeleteOptions findOneAndDeleteOptions) {
         return null;
     }
 
     @Override
-    public TDocument findOneAndReplace(Bson bson, TDocument tDocument) {
+    public Document findOneAndReplace(Bson bson, Document Document) {
         return null;
     }
 
     @Override
-    public TDocument findOneAndReplace(Bson bson, TDocument tDocument, FindOneAndReplaceOptions findOneAndReplaceOptions) {
+    public Document findOneAndReplace(Bson bson, Document Document, FindOneAndReplaceOptions findOneAndReplaceOptions) {
         return null;
     }
 
     @Override
-    public TDocument findOneAndUpdate(Bson bson, Bson bson1) {
+    public Document findOneAndUpdate(Bson bson, Bson bson1) {
         return null;
     }
 
     @Override
-    public TDocument findOneAndUpdate(Bson bson, Bson bson1, FindOneAndUpdateOptions findOneAndUpdateOptions) {
+    public Document findOneAndUpdate(Bson bson, Bson bson1, FindOneAndUpdateOptions findOneAndUpdateOptions) {
         return null;
     }
 

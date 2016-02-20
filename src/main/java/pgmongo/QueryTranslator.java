@@ -2,6 +2,7 @@ package pgmongo;
 
 import org.bson.Document;
 
+import javax.swing.plaf.DesktopIconUI;
 import java.util.*;
 
 public class QueryTranslator {
@@ -18,7 +19,7 @@ public class QueryTranslator {
         }
     }
 
-    //Find for unitTests
+    //find for tests
     public QueryResult find(String tableName, String inputQuery, String inputProjection) throws Exception {
         Document queryDoc = Document.parse(inputQuery);
         Document projectionDoc = !inputProjection.equals("") ? Document.parse(inputProjection) : new Document();
@@ -147,16 +148,15 @@ public class QueryTranslator {
     }
 
     //delete for tests
-    public QueryResult delete(String tableName, String inputQuery) throws Exception {
-        return delete(tableName, inputQuery, 0);
-    }
-
-    //delete for tests
     public QueryResult delete(String tableName, String inputQuery, int justOne) throws Exception {
         Document queryDoc = Document.parse(inputQuery);
         return delete(tableName, queryDoc, justOne);
     }
 
+    //delete for tests
+    public QueryResult delete(String tableName, String inputQuery) throws Exception {
+        return delete(tableName, inputQuery, 0);
+    }
 
     public QueryResult delete(String tableName, Document inputQuery, int justOne) throws Exception {
         ArrayList<Object> parameters = new ArrayList<>();
@@ -178,6 +178,33 @@ public class QueryTranslator {
         return new QueryResult(parameters, result.append(";").toString().replaceAll("  ", " "));
     }
 
+    //insert for tests
+    public QueryResult insert(String tableName, ArrayList<String> inputQuery, String s) throws Exception {
+        ArrayList<Document> arr = new ArrayList<>();
+        for (String anInputQuery : inputQuery) {
+            arr.add(Document.parse(anInputQuery));
+        }
+
+        return insert(tableName, arr);
+    }
+
+    public QueryResult insert(String tableName, List<Document> inputQuery) throws Exception {
+        ArrayList<Object> param = new ArrayList<>();
+        if (!inputQuery.get(0).containsKey("_id")) throw new Exception("Cannot be find key \"_id\".");
+        StringBuilder result = new StringBuilder("insert into " + tableName + " (_id, " + name_json_data + ") values (?, ?::jsonb)");
+        param.add(inputQuery.get(0).get("_id"));
+        param.add(inputQuery.get(0).toJson());
+
+        for (int i = 1; i < inputQuery.size(); i++) {
+            if (!inputQuery.get(i).containsKey("_id")) throw new Exception("Cannot be find key \"_id\".");
+            result.append(", (?, ?::jsonb)");
+            param.add(inputQuery.get(i).get("_id"));
+            param.add(inputQuery.get(i).toJson());
+        }
+
+        result.append(";");
+        return new QueryResult(param, result.toString());
+    }
 
     private static String getFirstKey(Document doc) {
         Iterator<String> i = doc.keySet().iterator();

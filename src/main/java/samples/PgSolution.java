@@ -19,6 +19,17 @@ public class PgSolution {
         this.db = mongo.getDatabase("");
         this.collection = db.getCollection("zips");
     }
+
+    public static void main(String[] args) throws SQLException, ClassNotFoundException {
+        PgSolution pg = new PgSolution("jdbc:postgresql://localhost:5432/postgres", "postgres", "postgres");
+
+    //    Document doc = new Document("_id", "01010");
+    //    pg.collection.deleteMany(doc);
+
+        Document doc = Document.parse("{_id: 123321, city: \"saratov\"}");
+        pg.collection.insertOne(doc);
+
+    }
 }
 
 

@@ -58,7 +58,7 @@ public class PgMongoDatabase implements MongoDatabase {
 
     @Override
     public MongoCollection<Document> getCollection(String collectionName) {
-        return new PgMongoCollection<>(connection, collectionName);
+        return new PgMongoCollection(connection, collectionName);
     }
 
     @Override

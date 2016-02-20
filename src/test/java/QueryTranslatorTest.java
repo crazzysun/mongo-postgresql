@@ -3,6 +3,7 @@ import pgmongo.QueryTranslator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 public class QueryTranslatorTest extends TestCase {
     QueryTranslator qt;
@@ -101,4 +102,13 @@ public class QueryTranslatorTest extends TestCase {
         TestCase.assertEquals(qt.delete("zips", "{'city': 'BARRE'}").getQuery(), "delete from zips where json_data->'city' = ?::jsonb;");
         TestCase.assertEquals(qt.delete("zips", "{'city': 'BARRE'}", 1).getQuery(), "delete from zips where json_data->'city' = ?::jsonb LIMIT 1;");
     }
+
+    public void testInsert() throws Exception {
+        TestCase.assertEquals(qt.insert("zips", new ArrayList<String>(Collections.singletonList("{item: \"card\", _id: 15}")), "").getQuery(),
+                "insert into zips (_id, json_data) values (?, ?::jsonb);");
+        TestCase.assertEquals(qt.insert("zips", new ArrayList<String>(Arrays.asList("{item: \"card\", _id: 15}", "{_id: 404, name: 'Nastya'}")), "").getQuery(),
+                "insert into zips (_id, json_data) values (?, ?::jsonb), (?, ?::jsonb);");
+    }
+
+
 }
