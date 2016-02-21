@@ -109,6 +109,4 @@ public class QueryTranslatorTest extends TestCase {
         TestCase.assertEquals(qt.insert("zips", new ArrayList<String>(Arrays.asList("{item: \"card\", _id: 15}", "{_id: 404, name: 'Nastya'}")), "").getQuery(),
                 "insert into zips (_id, json_data) values (?, ?::jsonb), (?, ?::jsonb);");
     }
-
-
 }

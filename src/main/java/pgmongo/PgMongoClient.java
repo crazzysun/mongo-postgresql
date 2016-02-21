@@ -10,15 +10,17 @@ import java.util.List;
 
 public class PgMongoClient<TDocument> extends MongoClient {
     private Connection connection = null;
+    private String columnWithJson;
 
-    public PgMongoClient(String url, String user, String password) throws ClassNotFoundException, SQLException {
+    public PgMongoClient(String url, String user, String password, String columnWithJson) throws ClassNotFoundException, SQLException {
         Class.forName("org.postgresql.Driver");
-        connection = DriverManager.getConnection(url, user, password);
+        this.connection = DriverManager.getConnection(url, user, password);
+        this.columnWithJson = columnWithJson;
     }
 
     @Override
     public MongoDatabase getDatabase(String databaseName) {
-        return new PgMongoDatabase(connection);
+        return new PgMongoDatabase(connection, columnWithJson);
     }
 
     @Override

@@ -16,9 +16,11 @@ import java.sql.Connection;
 public class PgMongoDatabase implements MongoDatabase {
 
     private Connection connection;
+    private String columnWithJson;
 
-    public PgMongoDatabase(Connection connection) {
+    public PgMongoDatabase(Connection connection, String columnWithJson) {
         this.connection = connection;
+        this.columnWithJson = columnWithJson;
     }
 
     @Override
@@ -57,8 +59,8 @@ public class PgMongoDatabase implements MongoDatabase {
     }
 
     @Override
-    public MongoCollection<Document> getCollection(String collectionName) {
-        return new PgMongoCollection(connection, collectionName);
+    public MongoCollection<Document> getCollection(String tableName) {
+        return new PgMongoCollection(connection, tableName, columnWithJson);
     }
 
     @Override

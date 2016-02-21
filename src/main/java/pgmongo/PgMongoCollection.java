@@ -21,11 +21,17 @@ import java.util.List;
 
 public class PgMongoCollection implements MongoCollection<Document> {
     private java.sql.Connection connection;
-    String tableName;
+    private String tableName;
+    private String columnWithJson;
 
-    public PgMongoCollection(java.sql.Connection connection, String tableName) {
+    public PgMongoCollection(java.sql.Connection connection, String tableName, String columnWithJson) {
         this.connection = connection;
         this.tableName = tableName;
+        this.columnWithJson = columnWithJson;
+    }
+
+    public void putColumnWithJsonName(String columnName) {
+        columnWithJson = columnName;
     }
 
     @Override
@@ -105,7 +111,7 @@ public class PgMongoCollection implements MongoCollection<Document> {
 
     public FindIterable<Document> find(Bson query, Bson projection) {
         try {
-            QueryTranslator qt = new QueryTranslator("json_data");
+            QueryTranslator qt = new QueryTranslator(columnWithJson);
             QueryTranslator.QueryResult result = qt.find(tableName, (Document) query, (Document) projection);
             PreparedStatement ps = connection.prepareStatement(result.getQuery());
             List<Object> param = result.getParameters();
@@ -207,7 +213,7 @@ public class PgMongoCollection implements MongoCollection<Document> {
 
     @Override
     public void insertMany(List<? extends Document> list) {
-        QueryTranslator qt = new QueryTranslator("json_data");
+        QueryTranslator qt = new QueryTranslator(columnWithJson);
         try {
             QueryTranslator.QueryResult result = qt.insert(tableName, (List<Document>) list);
             PreparedStatement ps = connection.prepareStatement(result.getQuery());
@@ -235,7 +241,7 @@ public class PgMongoCollection implements MongoCollection<Document> {
 
     @Override
     public DeleteResult deleteMany(Bson bson) {
-        QueryTranslator qt = new QueryTranslator("json_data");
+        QueryTranslator qt = new QueryTranslator(columnWithJson);
         try {
             QueryTranslator.QueryResult result = qt.delete(tableName, (Document) bson, 0);
             PreparedStatement ps = connection.prepareStatement(result.getQuery());
