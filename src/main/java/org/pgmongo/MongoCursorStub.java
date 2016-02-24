@@ -1,4 +1,4 @@
-package pgmongo;
+package org.pgmongo;
 
 import com.mongodb.ServerAddress;
 import com.mongodb.ServerCursor;

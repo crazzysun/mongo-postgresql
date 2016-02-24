@@ -1,4 +1,4 @@
-package pgmongo;
+package org.pgmongo;
 
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
@@ -16,11 +16,11 @@ import java.sql.Connection;
 public class PgMongoDatabase implements MongoDatabase {
 
     private Connection connection;
-    private String columnWithJson;
+    private boolean debug;
 
-    public PgMongoDatabase(Connection connection, String columnWithJson) {
+    public PgMongoDatabase(Connection connection, boolean debug) {
         this.connection = connection;
-        this.columnWithJson = columnWithJson;
+        this.debug = debug;
     }
 
     @Override
@@ -60,7 +60,7 @@ public class PgMongoDatabase implements MongoDatabase {
 
     @Override
     public MongoCollection<Document> getCollection(String tableName) {
-        return new PgMongoCollection(connection, tableName, columnWithJson);
+        return new PgMongoCollection(connection, tableName, debug);
     }
 
     @Override

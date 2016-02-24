@@ -1,4 +1,4 @@
-package pgmongo;
+package org.pgmongo;
 
 import com.mongodb.*;
 import com.mongodb.client.MongoDatabase;
@@ -10,17 +10,17 @@ import java.util.List;
 
 public class PgMongoClient<TDocument> extends MongoClient {
     private Connection connection = null;
-    private String columnWithJson;
+    private boolean debug;
 
-    public PgMongoClient(String url, String user, String password, String columnWithJson) throws ClassNotFoundException, SQLException {
+    public PgMongoClient(String url, String user, String password, boolean debug) throws ClassNotFoundException, SQLException {
         Class.forName("org.postgresql.Driver");
         this.connection = DriverManager.getConnection(url, user, password);
-        this.columnWithJson = columnWithJson;
+        this.debug = debug;
     }
 
     @Override
     public MongoDatabase getDatabase(String databaseName) {
-        return new PgMongoDatabase(connection, columnWithJson);
+        return new PgMongoDatabase(connection, debug);
     }
 
     @Override

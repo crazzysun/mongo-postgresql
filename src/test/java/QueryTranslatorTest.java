@@ -1,5 +1,5 @@
 import junit.framework.TestCase;
-import pgmongo.QueryTranslator;
+import org.pgmongo.QueryTranslator;
 
 import java.util.ArrayList;
 import java.util.Arrays;

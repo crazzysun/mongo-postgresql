@@ -1,5 +1,5 @@
 import junit.framework.*;
-import samples.MongoSolution;
+import org.pgmongo.samples.MongoSolution;
 import org.bson.Document;
 
 public class MongoSolutionTest extends TestCase {

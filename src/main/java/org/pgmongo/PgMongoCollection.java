@@ -1,4 +1,4 @@
-package pgmongo;
+package org.pgmongo;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
@@ -22,16 +22,13 @@ import java.util.List;
 public class PgMongoCollection implements MongoCollection<Document> {
     private java.sql.Connection connection;
     private String tableName;
-    private String columnWithJson;
+    private String columnWithJson = "json_data";
+    private boolean debug;
 
-    public PgMongoCollection(java.sql.Connection connection, String tableName, String columnWithJson) {
+    public PgMongoCollection(java.sql.Connection connection, String tableName, boolean debug) {
         this.connection = connection;
         this.tableName = tableName;
-        this.columnWithJson = columnWithJson;
-    }
-
-    public void putColumnWithJsonName(String columnName) {
-        columnWithJson = columnName;
+        this.debug = debug;
     }
 
     @Override
@@ -115,6 +112,11 @@ public class PgMongoCollection implements MongoCollection<Document> {
             QueryTranslator.QueryResult result = qt.find(tableName, (Document) query, (Document) projection);
             PreparedStatement ps = connection.prepareStatement(result.getQuery());
             List<Object> param = result.getParameters();
+
+            if (debug) {
+                System.out.println("sql query: " + result.getQuery());
+                System.out.println("sql param: " + param.toString());
+            }
 
             for (int i = 1; i <= param.size(); i++) {
                 ps.setString(i, param.get(i - 1).toString());
@@ -219,11 +221,17 @@ public class PgMongoCollection implements MongoCollection<Document> {
             PreparedStatement ps = connection.prepareStatement(result.getQuery());
             List<Object> param = result.getParameters();
 
+            if (debug) {
+                System.out.println("sql query: " + result.getQuery());
+                System.out.println("sql param: " + param.toString());
+            }
+
             for (int i = 1; i <= param.size(); i++) {
                 ps.setString(i, param.get(i - 1).toString());
             }
 
             ps.executeUpdate();
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -246,6 +254,11 @@ public class PgMongoCollection implements MongoCollection<Document> {
             QueryTranslator.QueryResult result = qt.delete(tableName, (Document) bson, 0);
             PreparedStatement ps = connection.prepareStatement(result.getQuery());
             List<Object> param = result.getParameters();
+
+            if (debug) {
+                System.out.println("sql query: " + result.getQuery());
+                System.out.println("sql param: " + param.toString());
+            }
 
             for (int i = 1; i <= param.size(); i++) {
                 ps.setString(i, "\"" + param.get(i - 1).toString() + "\"");

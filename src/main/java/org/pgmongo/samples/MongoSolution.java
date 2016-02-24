@@ -1,4 +1,4 @@
-package samples;
+package org.pgmongo.samples;
 
 import com.mongodb.*;
 import com.mongodb.client.*;

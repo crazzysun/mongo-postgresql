@@ -1,8 +1,7 @@
-package pgmongo;
+package org.pgmongo;
 
 import org.bson.Document;
 
-import javax.swing.plaf.DesktopIconUI;
 import java.util.*;
 
 public class QueryTranslator {
