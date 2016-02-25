@@ -1,6 +1,7 @@
 PGMongo experimental driver
 ===========================
-[![Build Status](https://travis-ci.org/crazzysun/mongo-postgresql.svg?branch=master)](https://travis-ci.org/crazzysun/mongo-postgresql)
+[![Build Status](https://travis-ci.org/crazzysun/mongo-postgresql.svg)](https://travis-ci.org/crazzysun/mongo-postgresql)
+
 An experimental driver that makes a PostgreSQL database appear like a MongoDB database to its customers.
 Works in interactive mode.
 
