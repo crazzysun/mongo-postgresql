@@ -58,21 +58,23 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
                             <mainClass>org.pgmongo.console.ConsoleApp</mainClass>
                         </manifest>
                     </archive>
+                    <finalName>pgmongo</finalName>
                 </configuration>
             </plugin>
         </plugins>
-
     </build>
 </project>
 

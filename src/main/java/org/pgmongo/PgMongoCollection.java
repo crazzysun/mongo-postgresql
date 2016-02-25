@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -114,8 +115,8 @@ public class PgMongoCollection implements MongoCollection<Document> {
             List<Object> param = result.getParameters();
 
             if (debug) {
-                System.out.println("sql query: " + result.getQuery());
-                System.out.println("sql param: " + param.toString());
+                System.out.println("DEBUG: sql query: " + result.getQuery());
+                System.out.println("DEBUG: sql param: " + Arrays.toString(param.toArray()));
             }
 
             for (int i = 1; i <= param.size(); i++) {
@@ -222,8 +223,8 @@ public class PgMongoCollection implements MongoCollection<Document> {
             List<Object> param = result.getParameters();
 
             if (debug) {
-                System.out.println("sql query: " + result.getQuery());
-                System.out.println("sql param: " + param.toString());
+                System.out.println("DEBUG: sql query: " + result.getQuery());
+                System.out.println("DEBUG: sql param: " + Arrays.toString(param.toArray()));
             }
 
             for (int i = 1; i <= param.size(); i++) {
@@ -256,12 +257,12 @@ public class PgMongoCollection implements MongoCollection<Document> {
             List<Object> param = result.getParameters();
 
             if (debug) {
-                System.out.println("sql query: " + result.getQuery());
-                System.out.println("sql param: " + param.toString());
+                System.out.println("DEBUG: sql query: " + result.getQuery());
+                System.out.println("DEBUG: sql param: " + Arrays.toString(param.toArray()));
             }
 
             for (int i = 1; i <= param.size(); i++) {
-                ps.setString(i, "\"" + param.get(i - 1).toString() + "\"");
+                ps.setString(i, param.get(i - 1).toString());
             }
 
             int res = ps.executeUpdate();

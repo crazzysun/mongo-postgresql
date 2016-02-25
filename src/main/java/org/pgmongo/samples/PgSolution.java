@@ -9,25 +9,25 @@ import org.pgmongo.PgMongoClient;
 import java.sql.SQLException;
 
 public class PgSolution {
-    MongoDatabase db;
-    MongoClient mongo;
+   MongoDatabase db;
+     MongoClient mongo;
     MongoCollection collection;
 
     //"jdbc:postgresql://localhost:5432/postgres", "postgres", "postgres"
     public PgSolution(String url, String name, String password, boolean debug) throws SQLException, ClassNotFoundException {
         this.mongo = new PgMongoClient(url, name, password, debug);
         this.db = mongo.getDatabase("");
-        this.collection = db.getCollection("zips");
+        this.collection = db.getCollection("test_json");
     }
 
     public static void main(String[] args) throws SQLException, ClassNotFoundException {
         PgSolution pg = new PgSolution("jdbc:postgresql://localhost:5432/postgres", "postgres", "postgres", false);
 
-        //    Document doc = new Document("_id", "01010");
-        //    pg.collection.deleteMany(doc);
+            Document doc = Document.parse("{_id: 123456}");
+            pg.collection.deleteMany(doc);
 
-        Document doc = Document.parse("{_id: 123321, city: \"saratov\"}");
-        pg.collection.insertOne(doc);
+//        Document doc = Document.parse("{_id: 123456}");
+//        pg.collection.insertOne(doc);
     }
 }
 

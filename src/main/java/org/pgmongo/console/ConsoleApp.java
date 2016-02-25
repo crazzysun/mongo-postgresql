@@ -12,122 +12,142 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ConsoleApp {
     MongoDatabase db;
     MongoClient mongo;
-    MongoCollection collection;
+    MongoCollection<Document> collection;
     BufferedReader in;
     boolean connectionSuccessful = false;
 
+    // sample for query:
     // connect -url jdbc:postgresql://localhost:5432/postgres -u postgres -p postgres
-// db.test_json.find({'review.votes': 2});
+    // db.test_json.find({'review.votes': 2});
 
-    void run(String[] args) throws IOException {
+    void run() throws IOException {
         in = new BufferedReader(new InputStreamReader(System.in));
-        String tableName = "";
 
         while (true) {
-            if (!connectionSuccessful) {
+            System.out.print("> ");
+            String[] args = in.readLine().split(" ");
+            if (!connectionSuccessful || !args[0].startsWith("db.")) {
                 switch (args[0]) {
                     case "help":
-                        System.out.println("help connect: connect -u [user name] -p [password] -url [url_to_db] -jdata [json_data_name] -debug\n" +
+                        System.out.println(
+                                "help connect: connect -u [user name] -p [password] -url [url_to_db] -debug\n" +
                                 "Options:\n" +
                                 "   -u          user name\n" +
                                 "   -p          password\n" +
                                 "   -url        url to db\n" +
-                                "   -jdata      json_data name (default: 'json_data')\n" +
-                                "   -debug      debug mod on\n");
+                                "   -debug      debug mod on\n" +
+                                "\n" +
+                                "help query: db.[collection_name].[query_name]([json]);\n" +
+                                "Support query name:\n" +
+                                "   find    (without projection, support comparison and logical operation);\n" +
+                                "   insert  (support comparison and logical operation);\n" +
+                                "   delete  (support comparison and logical operation).");
                         break;
                     case "connect":
                         if (args.length > 4) {
                             ini(args);
                         } else {
-                            System.out.println("Bad input value1. Type 'help' for help.");
+                            System.out.println("Bad input value. Type 'help' for help.");
                         }
                         break;
                     case "exit":
                         return;
                     default:
-                        System.out.println("Bad input value2. Type 'help' for help.");
+                        System.out.println("Bad input value: \"" + args[0] + "\". Type 'help' for help.");
                 }
-                args = in.readLine().split(" ");
             } else {
-                String mongoQuery = in.readLine().substring(3);
-                String collectionName = mongoQuery.substring(0, mongoQuery.indexOf('.')).trim();
-                System.out.println(collectionName);
+                String tmp = arrToString(args).trim();
+                if (tmp.length() == 0) {
+                    continue;
+                }
 
+                String mongoQuery = tmp.substring(3);
+                String collectionName = mongoQuery.substring(0, mongoQuery.indexOf('.')).trim();
                 String queryWithName = mongoQuery.substring(mongoQuery.indexOf('.') + 1).trim();
-                System.out.println(queryWithName);
+                String queryName = queryWithName.substring(0, queryWithName.indexOf('(')).trim();
+                String query = queryWithName.substring(queryName.length() + 1, queryWithName.length() - 2).trim();
 
                 this.collection = db.getCollection(collectionName);
 
-                String queryName = queryWithName.substring(0, queryWithName.indexOf('('));
-                System.out.println(queryName);
-
-                String query = queryWithName.substring(queryName.length()+1, queryWithName.length() - 2).trim();
-                System.out.println(query);
+                //System.out.println("collection name: " + collectionName);  //debug
+                //System.out.println("query with name: " + queryWithName);  //debug
+                //System.out.println("query name:  " + queryName);  //debug
+                //System.out.println("query:  " + query);  //debug
 
                 switch (queryName) {
                     case "find":
-                        ArrayList<String> resCut = cutQueryAndProj(query);
+                        ArrayList<Document> resCut = cutDocsFromString(query);
                         if (resCut.size() > 2) {
-                            System.out.println(resCut.toString());
-                            throw new RuntimeException("invalid request");
+                            throw new RuntimeException("Find: invalid request: " + Arrays.toString(resCut.toArray()) + ".");
                         }
 
-                        Document queryFind = Document.parse(resCut.get(0));
-                        Document projectionFind = (resCut.size() == 1) ? new Document() : Document.parse(resCut.get(1));
+                        Document queryFind = resCut.get(0);
+                        FindIterable<Document> fi = collection.find(queryFind);
 
-                        System.out.println(queryFind.toJson());
-                        FindIterable fi = collection.find(queryFind);
-                        for (Object o : fi) {
+                        for (Document o : fi) {
                             System.out.println(o.toString());
                         }
-
                         break;
                     case "insert":
+                        if (query.charAt(0) == '[') {
+                            query = query.substring(1, query.length() - 1);
+                        }
 
-
+                        resCut = cutDocsFromString(query);
+                        collection.insertMany(resCut);
+                        break;
                     case "delete":
+                        Document doc = Document.parse(query);
+                        collection.deleteMany(doc);
+                        break;
                     default:
                         throw new RuntimeException("Operation not supported.");
                 }
-
             }
         }
     }
 
-    private ArrayList<String> cutQueryAndProj(String s) {
+    private String arrToString(String[] arr) {
+        StringBuilder res = new StringBuilder();
+        for (String anArr : arr) {
+            res.append(anArr).append(" ");
+        }
+
+        return res.toString().trim();
+    }
+
+    private ArrayList<Document> cutDocsFromString(String s) {
         int balance = 0;
         int prevPos = 0;
-        int pos = -1;
+        int pos;
 
-        ArrayList<String> res = new ArrayList<>();
+        ArrayList<String> tmp = new ArrayList<>();
+        ArrayList<Document> res = new ArrayList<>();
 
         for (int i = 0; i < s.length(); i++) {
             if (s.charAt(i) == '{') balance++;
             if (s.charAt(i) == '}') balance--;
 
-            if (balance == 0) {
+            if (balance == 0 && s.charAt(i) == '}') {
                 pos = i;
-                res.add(s.substring(prevPos, pos + 1).trim());
-                prevPos = pos;
+                tmp.add(s.substring(prevPos, pos + 1).trim());
+                prevPos = pos + 1;
             }
         }
 
-        for (int i = 0; i < res.size(); i++) {
-            if (res.get(i).charAt(0) == ',') {
-                res.set(i, res.get(i).substring(1).trim());
+        for (int i = 0; i < tmp.size(); i++) {
+            if (tmp.get(i).charAt(0) == ',') {
+                tmp.set(i, tmp.get(i).substring(1).trim());
             }
+            res.add(Document.parse(tmp.get(i)));
         }
-
 
         return res;
-    }
-
-    public static void main(String[] args) throws IOException {
-        new ConsoleApp().run(args);
     }
 
     void ini(String[] args) {
@@ -176,9 +196,7 @@ public class ConsoleApp {
         System.out.println("Opened database successfully");
     }
 
-    /*
-    db.test_json.find({'review.votes': 2});
-
-
-    * */
+    public static void main(String[] args) throws IOException {
+        new ConsoleApp().run();
+    }
 }
