@@ -13,7 +13,7 @@ import org.bson.conversions.Bson;
 
 import java.sql.Connection;
 
-public class PgMongoDatabase implements MongoDatabase {
+public class PgMongoDatabase<TDocument> implements MongoDatabase {
 
     private Connection connection;
     private boolean debug;
@@ -59,7 +59,7 @@ public class PgMongoDatabase implements MongoDatabase {
     }
 
     @Override
-    public MongoCollection<Document> getCollection(String tableName) {
+    public PgMongoCollection getCollection(String tableName) {
         return new PgMongoCollection(connection, tableName, debug);
     }
 

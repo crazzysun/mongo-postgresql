@@ -1,11 +1,10 @@
 package org.pgmongo.console;
 
-import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.pgmongo.PgMongoClient;
+import org.pgmongo.PgMongoCollection;
+import org.pgmongo.PgMongoDatabase;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,15 +14,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ConsoleApp {
-    MongoDatabase db;
-    MongoClient mongo;
-    MongoCollection<Document> collection;
+    PgMongoDatabase db;
+    PgMongoClient mongo;
+    PgMongoCollection collection;
     BufferedReader in;
     boolean connectionSuccessful = false;
 
-    // sample for query:
-    // connect -url jdbc:postgresql://localhost:5432/postgres -u postgres -p postgres
-    // db.test_json.find({'review.votes': 2});
+    /*
+        sample query:
+        connect -url jdbc:postgresql://localhost:5432/postgres -u postgres -p postgres -debug
+        db.test_json.insert([{'review.votes': 1234, '_id': 123456}]);
+        db.test_json.find({_id: 123456});
+        db.test_json.delete({_id: 123456});
+        db.test_json.find({_id: 123456});
+        db.test_json.insert({_id: "235"});
+    */
 
     void run() throws IOException {
         in = new BufferedReader(new InputStreamReader(System.in));
@@ -35,18 +40,19 @@ public class ConsoleApp {
                 switch (args[0]) {
                     case "help":
                         System.out.println(
-                                "help connect: connect -u [user name] -p [password] -url [url_to_db] -debug\n" +
-                                "Options:\n" +
-                                "   -u          user name\n" +
-                                "   -p          password\n" +
-                                "   -url        url to db\n" +
-                                "   -debug      debug mod on\n" +
-                                "\n" +
-                                "help query: db.[collection_name].[query_name]([json]);\n" +
-                                "Support query name:\n" +
-                                "   find    (without projection, support comparison and logical operation);\n" +
-                                "   insert  (support comparison and logical operation);\n" +
-                                "   delete  (support comparison and logical operation).");
+                                "   help connect: connect -u [user name] -p [password] -url [url_to_db] -debug\n" +
+                                        "   Options:\n" +
+                                        "       -u          user name\n" +
+                                        "       -p          password\n" +
+                                        "       -url        url to db\n" +
+                                        "       -debug      debug mod on\n" +
+                                        "\n" +
+                                        "   help query: db.[collection_name].[query_name]([json]);\n" +
+                                        "   Support query name:\n" +
+                                        "       find    (with projection, support comparison and logical operation);\n" +
+                                        "       insert  (support comparison and logical operation);\n" +
+                                        "       delete  (support comparison and logical operation).\n\n" +
+                                        "   Type 'help' for help, 'exit' for exit.");
                         break;
                     case "connect":
                         if (args.length > 4) {
@@ -71,23 +77,18 @@ public class ConsoleApp {
                 String queryWithName = mongoQuery.substring(mongoQuery.indexOf('.') + 1).trim();
                 String queryName = queryWithName.substring(0, queryWithName.indexOf('(')).trim();
                 String query = queryWithName.substring(queryName.length() + 1, queryWithName.length() - 2).trim();
-
                 this.collection = db.getCollection(collectionName);
-
-                //System.out.println("collection name: " + collectionName);  //debug
-                //System.out.println("query with name: " + queryWithName);  //debug
-                //System.out.println("query name:  " + queryName);  //debug
-                //System.out.println("query:  " + query);  //debug
 
                 switch (queryName) {
                     case "find":
                         ArrayList<Document> resCut = cutDocsFromString(query);
-                        if (resCut.size() > 2) {
+                        if (resCut.size() > 2 || resCut.size() < 1) {
                             throw new RuntimeException("Find: invalid request: " + Arrays.toString(resCut.toArray()) + ".");
                         }
 
                         Document queryFind = resCut.get(0);
-                        FindIterable<Document> fi = collection.find(queryFind);
+                        Document projectionFind = (resCut.size() == 1) ? new Document() : resCut.get(1);
+                        FindIterable<Document> fi = collection.find(queryFind, projectionFind);
 
                         for (Document o : fi) {
                             System.out.println(o.toString());
@@ -190,7 +191,6 @@ public class ConsoleApp {
         } catch (ClassNotFoundException | SQLException e) {
             throw new RuntimeException(e);
         }
-
 
         connectionSuccessful = true;
         System.out.println("Opened database successfully");
