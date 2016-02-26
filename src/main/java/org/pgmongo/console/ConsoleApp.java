@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class ConsoleApp {
     PgMongoDatabase db;
@@ -25,6 +24,7 @@ public class ConsoleApp {
         connect -url jdbc:postgresql://localhost:5432/postgres -u postgres -p postgres -debug
         db.test_json.insert([{'review.votes': 1234, '_id': 123456}]);
         db.test_json.find({_id: 123456});
+        db.test_json.find({_id: 123456}, {_id: 1});
         db.test_json.delete({_id: 123456});
         db.test_json.find({_id: 123456});
         db.test_json.insert({_id: "235"});
@@ -56,10 +56,17 @@ public class ConsoleApp {
                         break;
                     case "connect":
                         if (args.length > 4) {
-                            ini(args);
+                            try {
+                                ini(args);
+                            } catch (Exception e) {
+                                System.out.println(e.getMessage());
+                            }
                         } else {
                             System.out.println("Bad input value. Type 'help' for help.");
                         }
+                        break;
+                    case "cheers":
+                        System.out.println("I am very grateful to Yuri & Dmitry! :) Thanks to Grid Dynamics! Nastya");
                         break;
                     case "exit":
                         return;
@@ -67,6 +74,7 @@ public class ConsoleApp {
                         System.out.println("Bad input value: \"" + args[0] + "\". Type 'help' for help.");
                 }
             } else {
+
                 String tmp = arrToString(args).trim();
                 if (tmp.length() == 0) {
                     continue;
@@ -79,35 +87,39 @@ public class ConsoleApp {
                 String query = queryWithName.substring(queryName.length() + 1, queryWithName.length() - 2).trim();
                 this.collection = db.getCollection(collectionName);
 
-                switch (queryName) {
-                    case "find":
-                        ArrayList<Document> resCut = cutDocsFromString(query);
-                        if (resCut.size() > 2 || resCut.size() < 1) {
-                            throw new RuntimeException("Find: invalid request: " + Arrays.toString(resCut.toArray()) + ".");
-                        }
+                try {
+                    switch (queryName) {
+                        case "find":
+                            ArrayList<Document> resCut = cutDocsFromString(query);
+                            if (resCut.size() > 2 || resCut.size() < 1) {
+                                throw new IllegalArgumentException("Find: invalid request: " + query + ".");
+                            }
 
-                        Document queryFind = resCut.get(0);
-                        Document projectionFind = (resCut.size() == 1) ? new Document() : resCut.get(1);
-                        FindIterable<Document> fi = collection.find(queryFind, projectionFind);
+                            Document queryFind = resCut.get(0);
+                            Document projectionFind = (resCut.size() == 1) ? new Document() : resCut.get(1);
+                            FindIterable<Document> fi = collection.find(queryFind, projectionFind);
 
-                        for (Document o : fi) {
-                            System.out.println(o.toString());
-                        }
-                        break;
-                    case "insert":
-                        if (query.charAt(0) == '[') {
-                            query = query.substring(1, query.length() - 1);
-                        }
+                            for (Document o : fi) {
+                                System.out.println(o.toString());
+                            }
+                            break;
+                        case "insert":
+                            if (query.charAt(0) == '[') {
+                                query = query.substring(1, query.length() - 1);
+                            }
 
-                        resCut = cutDocsFromString(query);
-                        collection.insertMany(resCut);
-                        break;
-                    case "delete":
-                        Document doc = Document.parse(query);
-                        collection.deleteMany(doc);
-                        break;
-                    default:
-                        throw new RuntimeException("Operation not supported.");
+                            resCut = cutDocsFromString(query);
+                            collection.insertMany(resCut);
+                            break;
+                        case "delete":
+                            Document doc = Document.parse(query);
+                            collection.deleteMany(doc);
+                            break;
+                        default:
+                            throw new UnsupportedOperationException("Operation \"" + queryName + "\" not supported.");
+                    }
+                } catch (Exception ex) {
+                    System.out.println(ex.getMessage());
                 }
             }
         }
@@ -152,8 +164,8 @@ public class ConsoleApp {
     }
 
     void ini(String[] args) {
-        String url_to_db = "";
-        String user_name = "";
+        String urlToDb = "";
+        String userName = "";
         String password = "";
         boolean debug = false;
 
@@ -161,7 +173,7 @@ public class ConsoleApp {
             switch (args[i]) {
                 case "-u":
                     if (i < args.length - 1 && args[i + 1].charAt(0) != '-') {
-                        user_name = args[i + 1];
+                        userName = args[i + 1];
                         i++;
                         break;
                     } else continue;
@@ -173,7 +185,7 @@ public class ConsoleApp {
                     } else continue;
                 case "-url":
                     if (i < args.length - 1 && args[i + 1].charAt(0) != '-') {
-                        url_to_db = args[i + 1];
+                        urlToDb = args[i + 1];
                         i++;
                         break;
                     } else continue;
@@ -186,14 +198,14 @@ public class ConsoleApp {
         }
 
         try {
-            this.mongo = new PgMongoClient(url_to_db, user_name, password, debug);
+            this.mongo = new PgMongoClient(urlToDb, userName, password, debug);
             this.db = mongo.getDatabase("");
         } catch (ClassNotFoundException | SQLException e) {
             throw new RuntimeException(e);
         }
 
         connectionSuccessful = true;
-        System.out.println("Opened database successfully");
+        System.out.println("Opened database successfully.");
     }
 
     public static void main(String[] args) throws IOException {

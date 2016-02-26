@@ -104,9 +104,9 @@ public class QueryTranslatorTest extends TestCase {
     }
 
     public void testInsert() throws Exception {
-        TestCase.assertEquals(qt.insert("zips", new ArrayList<String>(Collections.singletonList("{item: \"card\", _id: 15}")), "").getQuery(),
+        TestCase.assertEquals(qt.insert("zips", new ArrayList<>(Collections.singletonList("{item: \"card\", _id: 15}")), "").getQuery(),
                 "insert into zips (_id, json_data) values (?, ?::jsonb);");
-        TestCase.assertEquals(qt.insert("zips", new ArrayList<String>(Arrays.asList("{item: \"card\", _id: 15}", "{_id: 404, name: 'Nastya'}")), "").getQuery(),
+        TestCase.assertEquals(qt.insert("zips", new ArrayList<>(Arrays.asList("{item: \"card\", _id: 15}", "{_id: 404, name: 'Nastya'}")), "").getQuery(),
                 "insert into zips (_id, json_data) values (?, ?::jsonb), (?, ?::jsonb);");
     }
 }

@@ -13,7 +13,7 @@ import org.bson.conversions.Bson;
 
 import java.sql.Connection;
 
-public class PgMongoDatabase<TDocument> implements MongoDatabase {
+public class PgMongoDatabase implements MongoDatabase {
 
     private Connection connection;
     private boolean debug;

@@ -13,9 +13,6 @@ import java.util.Spliterator;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-/**
- * Created by student on 2/18/16.
- */
 public abstract class FindIterableStub<T> implements FindIterable<T> {
 
     @Override
